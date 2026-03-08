@@ -1,0 +1,53 @@
+# Implementation Plan: Multimodal Emotion-Driven Adaptive Coding Platform
+
+## Goal Description
+Transform the existing scaffolded demo into a fully functional, deep-learning-powered adaptive coding platform. The plan is to replace mock ML models with actual implementation, build a functional code sandbox, and create comprehensive analytics dashboards.
+
+## User Review Required
+> [!IMPORTANT]  
+> Please review the proposed architecture. The plan is to build out all 5 phases sequentially within the `g:\mini project\automated-learning-system` directory. Since the backend already uses SQLite, we will stick to it (or upgrade to PostgreSQL if you prefer, but SQLite works well for local deployments). We will use PyTorch & OpenCV for the models.
+
+## Proposed Changes
+
+### Phase 1 — Facial Emotion + Coding Platform
+- **Backend:**
+  - Add SQLAlchemy models for `CodingProblem`, `Submission`, and `TestCase`.
+  - Create secure Python execution sandbox (`backend/app/services/sandbox.py`) using `subprocess` with timeouts or `RestrictedPython`.
+  - Integrate a trained deep PyTorch CNN for FER2013 into `backend/app/multimodal/facial_emotion/`.
+- **Frontend:**
+  - Build `CodingInterface.jsx` using `@monaco-editor/react`.
+  - Integrate `react-webcam` to capture and stream frames periodically to the WebSocket `/ws/emotion`.
+  
+### Phase 2 — Add Voice Emotion Detection
+- **Backend:**
+  - Add audio processing pipeline using `librosa`.
+  - Integrate a Wav2Vec2 model into `backend/app/multimodal/speech_emotion/` for stress/frustration detection.
+- **Frontend:**
+  - Add MediaRecorder API to capture audio streams via the microphone alongside the webcam.
+  
+### Phase 3 — Behavioral Analytics Module
+- **Backend:**
+  - Enhance `typing_behavior` to calculate actual standard deviation, speed (WPM), and backspace frequency. Use an `sklearn` RandomForest classifier pre-trained on sample data.
+- **Frontend:**
+  - Add keydown/keyup event listeners to the Monaco editor and dispatch typing metadata (not raw keys) to the backend.
+
+### Phase 4 — Adaptive Decision Engine
+- **Backend:**
+  - Enhance the fusion engine (`backend/app/multimodal/fusion.py`) to perform attention-based weighted averaging.
+  - Upgrade the RL Engine to a rules-based contextual policy (producing actionable hints based on exact states).
+
+### Phase 5 — Teacher Analytics Dashboard
+- **Frontend:**
+  - Build `TeacherDashboard.jsx` using `recharts`.
+  - Implement heatmaps, engagement trends, and CSV export.
+- **Backend:**
+  - Build analytics aggregation endpoints under `/analytics/dashboard`.
+
+## Verification Plan
+
+### Automated/Local Tests
+- Run `pytest` on the backend `sandbox.py` to ensure untrusted code executes safely and times out correctly.
+- Run model inference scripts independently on sample images and audio files to verify accuracy.
+
+### Manual Verification
+- We will start the platform using `run_project.ps1` and manually interact with the Monaco editor, webcam, and microphone to verify real-time emotion logging and adaptive hint generation.

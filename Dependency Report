@@ -1,0 +1,62 @@
+# Emotion-Adaptive Learning Platform: Dependency Report
+
+Here is the complete analysis of ALL external requirements needed for the platform to run flawlessly during the review demo. 
+
+### 1️⃣ Python Dependencies
+The backend relies on the following packages. I have updated `requirements.txt` to include all missing inferred packages like `librosa` and `opencv-python`.
+*   `fastapi`, `uvicorn[standard]`
+*   `SQLAlchemy`, `alembic`
+*   `pydantic`, `email-validator`
+*   `python-jose`, `passlib`, `bcrypt`, `python-multipart`
+*   `websockets`, `requests`, `aiofiles`, `python-dotenv`, `typing_extensions`
+*   `gymnasium`, `stable-baselines3`, `numpy`, `pandas`
+*   `torch`, `transformers`
+*   `librosa`, `opencv-python`
+
+### 2️⃣ Node Dependencies
+The React frontend (in `frontend_app/package.json`) uses standard `react-scripts`. Based on the project scope, the following node dependencies are expected:
+*   `react`, `react-dom`, `react-scripts`, `web-vitals`
+*   `axios` (API requests)
+*   `chart.js`, `recharts` (Future analytics plotting)
+*   `socket.io-client` (Alternative WS library)
+*   `tailwindcss` (Styling)
+
+### 3️⃣ ML Models
+The heavy ML pipeline runs primarily via mock inference for demo stability, but the underlying architecture expects:
+1.  **Speech Emotion Model**: HuggingFace `superb/wav2vec2-base-superb-er` (A pre-trained Wav2Vec2 Sequence Classification model).
+2.  **RL Adaptive Engine**: Expected at `./models/ppo_model.zip` (trained using `stable-baselines3`).
+3.  **Facial Emotion Model**: `FacialEmotionCNN` uses an assumed `PyTorch` weight file (usually `FER2013` weights).
+
+### 4️⃣ Datasets
+The system acts purely on real-time inbound inferences (e.g. streaming WebSockets). It does **not** rely on static datasets natively at runtime. However, if retraining the models, you will need:
+*   **FER2013** (Facial Emotion): [Kaggle Source](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge)
+*   **IEMOCAP / RAVDESS** (Speech): [Kaggle Source](https://www.kaggle.com/datasets/uwrfkaggler/ravdess-emotional-speech-audio)
+
+### 5️⃣ API Keys / Environment Variables
+Configuration is handled via `backend/app/config.py`. An `.env` file must dictate the operational constants.
+```env
+DATABASE_URL=sqlite:///./emotion_learning.db
+SECRET_KEY=supersecretkey-change-in-production
+RL_MODEL_PATH=./models/ppo_model.zip
+```
+
+### 6️⃣ System Tools
+The server expects the following underlying host binaries to process and compile everything:
+*   **Python 3.10+**
+*   **Node.js 18+** & **npm**
+*   **Git**
+*   *Optional:* **FFmpeg** (If extending `librosa` to parse `.mp4/m4a` audio chunks natively instead of raw `wav`).
+
+### 7️⃣ Download Commands
+To safely download and cache the massive HuggingFace Wav2Vec2 model into the local `.cache` before runtime to prevent server timeouts:
+```python
+python -c "from transformers import Wav2Vec2Processor, Wav2Vec2ForSequenceClassification; Wav2Vec2Processor.from_pretrained('superb/wav2vec2-base-superb-er'); Wav2Vec2ForSequenceClassification.from_pretrained('superb/wav2vec2-base-superb-er')"
+```
+
+### 8️⃣ Setup Script
+I have generated the fully automated `setup_environment.ps1` script in the root directory. This script performs all venv creations, `pip` installations, HuggingFace model caching, frontend `npm` installations, and `.env` generations autonomously.
+
+Run the following to prepare the newly configured environment globally:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_environment.ps1
+```

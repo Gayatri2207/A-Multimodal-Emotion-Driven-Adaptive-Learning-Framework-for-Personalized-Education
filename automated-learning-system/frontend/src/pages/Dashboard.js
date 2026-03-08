@@ -5,7 +5,7 @@ function Dashboard() {
   const [analytics, setAnalytics] = useState({});
 
   useEffect(() => {
-    axios.get("http://localhost:8000/analytics")
+    axios.get("http://localhost:8000/analytics/summary")
       .then(res => setAnalytics(res.data))
       .catch(err => console.log(err));
   }, []);

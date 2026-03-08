@@ -1,18 +1,32 @@
-from datetime import datetime, timedelta
-from jose import jwt
-from passlib.context import CryptContext
-from app.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+"""Authentication service for user registration and login."""
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from sqlalchemy.orm import Session
+from app.models.user_model import User
+from app.utils.security import hash_password, verify_password, create_access_token
+from app.utils.logger import logger
 
-def hash_password(password: str):
-    return pwd_context.hash(password)
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def create_user(db: Session, email: str, password: str) -> User:
+    """Register a new user with email and password."""
+    existing = db.query(User).filter(User.email == email).first()
+    if existing:
+        raise ValueError("Email already registered")
+    user = User(email=email, hashed_password=hash_password(password))
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    logger.info(f"✓ User registered: {email}")
+    return user
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def authenticate_user(db: Session, email: str, password: str):
+    """Authenticate user and return JWT token."""
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    token = create_access_token(str(user.id))
+    logger.info(f"✓ User authenticated: {email}")
+    return {"access_token": token, "token_type": "bearer", "user_id": user.id}
+

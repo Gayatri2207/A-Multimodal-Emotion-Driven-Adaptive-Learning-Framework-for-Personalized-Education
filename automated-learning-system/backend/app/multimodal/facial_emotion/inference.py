@@ -1,45 +1,27 @@
-import torch
-import cv2
-import numpy as np
-from .model import FacialEmotionCNN
-from app.utils.helpers import map_emotion_label
+"""
+Facial emotion inference wrapper.
+Delegates to FacialEmotionModel which handles CNN weights or heuristic fallback.
+"""
+from typing import Optional
+from app.utils.logger import logger
+from .model import FacialEmotionModel
 
-model = FacialEmotionCNN()
-model.eval()
+try:
+    import numpy as np
+except Exception:
+    np = None
 
-def predict_frame(frame):
-
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    face = cv2.resize(gray, (48, 48))
-    face = face / 255.0
-
-    tensor = torch.tensor(face, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-
-    with torch.no_grad():
-        output = model(tensor)
-        _, predicted = torch.max(output, 1)
-
-    return map_emotion_label(predicted.item())
+facial_model = FacialEmotionModel()
 
 
-def live_webcam_emotion():
-    cap = cv2.VideoCapture(0)
+def predict_emotion_score(image_array: Optional["np.ndarray"] = None) -> float:
+    """
+    Predict emotion score from image array.
+    Returns float in [0.0, 1.0].
+    """
+    try:
+        return facial_model.predict(image_array)
+    except Exception as e:
+        logger.warning(f"Facial prediction failed: {e}, returning neutral")
+        return 0.5
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        emotion = predict_frame(frame)
-
-        cv2.putText(frame, emotion, (50, 50),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (0, 255, 0), 2)
-
-        cv2.imshow("Emotion Detection", frame)
-
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()

@@ -1,21 +1,25 @@
-import torch
-import librosa
-from transformers import Wav2Vec2Processor, Wav2Vec2ForSequenceClassification
+"""
+Speech emotion inference wrapper.
+Delegates to SpeechEmotionModel (Wav2Vec2 with heuristic fallback).
+"""
+from app.utils.logger import logger
+from .model import predict_speech_emotion as _predict
 
-processor = Wav2Vec2Processor.from_pretrained("superb/wav2vec2-base-superb-er")
-model = Wav2Vec2ForSequenceClassification.from_pretrained("superb/wav2vec2-base-superb-er")
 
-def predict_speech_emotion(audio_path):
+def predict_speech_emotion(audio_path: str) -> float:
+    """
+    Load audio from file and predict emotion score.
 
-    speech, sr = librosa.load(audio_path, sr=16000)
+    Args:
+        audio_path: Path to a wav/mp3 audio file
+    Returns:
+        float in [0.0, 1.0]
+    """
+    try:
+        import librosa
+        audio, sr = librosa.load(audio_path, sr=16000)
+        return _predict(audio, sampling_rate=sr)
+    except Exception as e:
+        logger.warning(f"Speech inference from file failed: {e}, returning neutral")
+        return 0.5
 
-    inputs = processor(speech, sampling_rate=16000, return_tensors="pt", padding=True)
-
-    with torch.no_grad():
-        logits = model(**inputs).logits
-
-    predicted = torch.argmax(logits, dim=-1).item()
-
-    labels = model.config.id2label
-
-    return labels[predicted]

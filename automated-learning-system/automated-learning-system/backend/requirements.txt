@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+python-jose[cryptography]
+passlib[bcrypt]
+opencv-python-headless
+torch
+torchvision
+torchaudio
+transformers
+librosa
+numpy
+stable-baselines3
+websockets
+python-multipart
